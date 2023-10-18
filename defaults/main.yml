@@ -4,6 +4,8 @@ ecr_image_src_dir: ../my-project
 ecr_image_name: namespace/my-project
 
 ecr_image_buildargs: {}
+wait_image_build_max_retries: 1800
+wait_image_build_delay: 2
 
 # You can add one or more tags.
 ecr_image_tags: ['latest']

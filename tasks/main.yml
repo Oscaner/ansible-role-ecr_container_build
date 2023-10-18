@@ -22,6 +22,15 @@
     state: present
     source: build
     tag: "{{ ecr_image_tags.0 }}"
+  async: 3600
+  poll: 0
+  register: build_image_sleeper
+
+- name: Wait for image build to complete.
+  include_tasks: wait-docker-until-success.yml
+  vars:
+    wait_block_name: "Wait for image build to complete [{{ ecr_image_name }}]"
+    results_file: "{{ build_image_sleeper.results_file }}"
 
 - name: Ensure ECR repo exists.
   ecs_ecr:
