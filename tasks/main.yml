@@ -1,6 +1,14 @@
 ---
+# - name: Log into ECR if required.
+#   shell: "$(aws ecr get-login --no-include-email --region {{ ecr_region }})"
+#   tags: ['skip_ansible_lint']
+#   when: ecr_push or ecr_login_required
+
+# @see https://github.com/geerlingguy/ansible-role-ecr_container_build/issues/15
 - name: Log into ECR if required.
-  shell: "$(aws ecr get-login --no-include-email --region {{ ecr_region }})"
+  shell: |
+    aws ecr get-login-password --region {{ ecr_region }} | \
+      docker login --username AWS --password-stdin {{ ecr_url }}
   tags: ['skip_ansible_lint']
   when: ecr_push or ecr_login_required
 
