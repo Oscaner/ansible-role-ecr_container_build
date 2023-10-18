@@ -2,7 +2,7 @@
 dependencies: []
 
 galaxy_info:
-  author: geerlingguy
+  author: oscaner
   role_name: ecr_container_build
   description: ECR docker image build and push management role.
   company: "Midwestern Mac, LLC"
