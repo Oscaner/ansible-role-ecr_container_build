@@ -28,16 +28,20 @@
 
     - name: "{{ wait_block_name }} [wait_docker_results]"
       debug: var=wait_docker_results
-      when: wait_docker_failed == true or wait_docker_results.ansible_job_id is defined
+      when: wait_docker_results.ansible_job_id is defined
 
     - name: "{{ wait_block_name }} [retry]"
       fail:
         msg: "-- {{ wait_block_name }} (Retry {{ wait_docker_retries }} times)."
-      when: wait_docker_succeed == false and wait_docker_failed == false
+      when: wait_docker_succeed == false
   rescue:
     - name: "{{ wait_block_name }} [timeout]"
       fail:
         msg: "Ended after {{ wait_image_build_max_retries }} retries."
       when: wait_docker_retries | int >= wait_image_build_max_retries | int
+    - name: "{{ wait_block_name }} [failed]"
+      fail:
+        msg: "Failed with {{ wait_docker_results }}"
+      when: wait_docker_failed == true
     - name: "{{ wait_block_name }} [recursion]"
       include_tasks: wait-docker-until-success.yml
