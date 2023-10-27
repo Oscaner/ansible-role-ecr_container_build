@@ -18,6 +18,7 @@
       path: "{{ ecr_image_src_dir }}"
       pull: true
       args: "{{ ecr_image_buildargs | default(omit) }}"
+      network: host
     name: "{{ ecr_image_name }}"
     state: present
     source: build
