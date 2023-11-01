@@ -7,14 +7,14 @@
     - name: "{{ wait_block_name }} [variables]"
       set_fact:
         wait_docker_retries: "{{ wait_docker_retries | default(0) | int + 1 }}"
-        wait_docker_succeed: "{{ wait_docker_succeed | default(false) }}"
-        wait_docker_failed: "{{ wait_docker_failed | default(false) }}"
+        wait_docker_succeed: "{{ wait_docker_succeed | default(false) | bool }}"
+        wait_docker_failed: "{{ wait_docker_failed | default(false) | bool }}"
         wait_docker_results: "{{ lookup('file', results_file) | from_json }}"
 
     - name: "{{ wait_block_name }} [wait_docker_succeed - async]"
       set_fact:
         wait_docker_succeed: true
-      when: wait_docker_results.finished is defined and wait_docker_results.finished == 1
+      when: wait_docker_results.finished is defined and wait_docker_results.finished | bool
 
     - name: "{{ wait_block_name }} [wait_docker_succeed - image]"
       set_fact:
@@ -24,7 +24,7 @@
     - name: "{{ wait_block_name }} [wait_docker_failed]"
       set_fact:
         wait_docker_failed: true
-      when: wait_docker_results.failed is defined and wait_docker_results.failed
+      when: wait_docker_results.failed is defined and wait_docker_results.failed | bool
 
     - name: "{{ wait_block_name }} [wait_docker_results]"
       debug: var=wait_docker_results
@@ -33,7 +33,13 @@
     - name: "{{ wait_block_name }} [retry]"
       fail:
         msg: "-- {{ wait_block_name }} (Retry {{ wait_docker_retries }} times)."
-      when: wait_docker_succeed == false
+      when: wait_docker_succeed | bool == false
+
+    - name: "{{ wait_block_name }} [done]"
+      set_fact:
+        wait_docker_retries: 0
+        wait_docker_succeed: false
+        wait_docker_failed: false
   rescue:
     - name: "{{ wait_block_name }} [timeout]"
       fail:
@@ -42,6 +48,6 @@
     - name: "{{ wait_block_name }} [failed]"
       fail:
         msg: "Failed with {{ wait_docker_results }}"
-      when: wait_docker_failed == true
+      when: wait_docker_failed | bool == true
     - name: "{{ wait_block_name }} [recursion]"
       include_tasks: wait-docker-until-success.yml

@@ -17,7 +17,7 @@
       copy:  # noqa 208
         src: "{{ item }}"
         dest: /tmp
-      with_items:
+      loop:
         - test-container
         - test-container-buildargs
 
