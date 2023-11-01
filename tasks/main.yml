@@ -16,6 +16,7 @@
   docker_image:
     build:
       path: "{{ ecr_image_src_dir }}"
+      dockerfile: "{{ ecr_image_dockerfile | default(omit) }}"
       pull: true
       args: "{{ ecr_image_buildargs | default(omit) }}"
       network: host
