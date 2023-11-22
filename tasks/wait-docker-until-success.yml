@@ -11,20 +11,23 @@
         wait_docker_failed: "{{ wait_docker_failed | default(false) | bool }}"
         wait_docker_results: "{{ lookup('file', results_file) | from_json }}"
 
-    - name: "{{ wait_block_name }} [wait_docker_succeed - async]"
+    - name: "{{ wait_block_name }} [wait_docker_succeed]"
       set_fact:
         wait_docker_succeed: true
-      when: wait_docker_results.finished is defined and wait_docker_results.finished | bool
-
-    - name: "{{ wait_block_name }} [wait_docker_succeed - image]"
-      set_fact:
-        wait_docker_succeed: true
-      when: wait_docker_results.image is defined
+      when: |
+        (wait_docker_results.finished is defined and wait_docker_results.finished | bool)
+        or
+        (wait_docker_results.image is defined)
+        or
+        (wait_docker_results.rc is defined and wait_docker_results.rc | int == 0)
 
     - name: "{{ wait_block_name }} [wait_docker_failed]"
       set_fact:
         wait_docker_failed: true
-      when: wait_docker_results.failed is defined and wait_docker_results.failed | bool
+      when: |
+        (wait_docker_results.failed is defined and wait_docker_results.failed | bool)
+        or
+        (wait_docker_results.rc is defined and wait_docker_results.rc | int != 0)
 
     - name: "{{ wait_block_name }} [wait_docker_results]"
       debug: var=wait_docker_results

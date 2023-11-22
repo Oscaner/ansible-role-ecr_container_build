@@ -27,12 +27,34 @@
   async: 3600
   poll: 0
   register: build_image_sleeper
+  when: not ecr_image_buildkit
+
+- name: Build image by buildkit.
+  shell: |
+    docker start buildkitd || docker run -d --name buildkitd --privileged moby/buildkit:latest
+
+    export BUILDKIT_HOST=docker-container://buildkitd
+
+    buildctl build \
+      --frontend=dockerfile.v0 \
+      --local context={{ ecr_image_src_dir }} \
+      --local dockerfile={{ ecr_image_dockerfile | default(ecr_image_src_dir + '/Dockerfile') | dirname }} \
+      {% for key, value in ecr_image_buildargs.items() %}
+      --opt build-arg:{{ key }}={{ value }} \
+      {% endfor %}
+      --export-cache type=local,dest=/tmp/buildcache/{{ ecr_image_name }},mode=max,image-manifest=true,oci-mediatypes=true \
+      --import-cache type=local,src=/tmp/buildcache/{{ ecr_image_name }},ignore-error=true \
+      --output type=docker,name={{ ecr_image_name }}:{{ ecr_image_tags.0 }} | docker load
+  async: 3600
+  poll: 0
+  register: buildx_image_sleeper
+  when: ecr_image_buildkit
 
 - name: Wait for image build to complete.
   include_tasks: wait-docker-until-success.yml
   vars:
     wait_block_name: "Wait for image build to complete [{{ ecr_image_name }}]"
-    results_file: "{{ build_image_sleeper.results_file }}"
+    results_file: "{{ buildx_image_sleeper.results_file | default(build_image_sleeper.results_file) }}"
 
 - name: Ensure ECR repo exists.
   ecs_ecr:

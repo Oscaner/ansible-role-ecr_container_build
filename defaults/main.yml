@@ -2,6 +2,7 @@
 # Image build options.
 ecr_image_src_dir: ../my-project
 ecr_image_name: namespace/my-project
+ecr_image_buildkit: false
 
 ecr_image_buildargs: {}
 wait_image_build_max_retries: 1800
