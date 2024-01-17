@@ -21,3 +21,7 @@ ecr_push: true
 ecr_region: us-east-1
 ecr_account_id: '123456789012'
 ecr_url: "{{ ecr_account_id }}.dkr.ecr.{{ ecr_region }}.amazonaws.com"
+
+# docker host aliases
+network_host: true
+network_host_aliases: []

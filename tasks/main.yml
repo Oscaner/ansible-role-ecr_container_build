@@ -31,20 +31,30 @@
 
 - name: Build image by buildkit.
   shell: |
-    docker start buildkitd || docker run -d --name buildkitd --privileged moby/buildkit:latest
+    docker buildx inspect buildkitd --bootstrap || \
+    docker buildx create --bootstrap --use \
+      --name buildkitd \
+      --driver-opt image=moby/buildkit:master \
+      --driver-opt network=host \
+      --buildkitd-flags '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host'
 
-    export BUILDKIT_HOST=docker-container://buildkitd
-
-    buildctl build \
-      --frontend=dockerfile.v0 \
-      --local context={{ ecr_image_src_dir }} \
-      --local dockerfile={{ ecr_image_dockerfile | default(ecr_image_src_dir + '/Dockerfile') | dirname }} \
-      {% for key, value in ecr_image_buildargs.items() %}
-      --opt build-arg:{{ key }}={{ value }} \
+    docker buildx build \
+      --allow network.host \
+      --file {{ ecr_image_dockerfile | default(ecr_image_src_dir + '/Dockerfile') }} \
+      {% if network_host %}
+      --network host \
+      {% endif %}
+      {% for alias in network_host_aliases %}
+      --add-host {{ alias }} \
       {% endfor %}
-      --export-cache type=local,dest=/tmp/buildcache/{{ ecr_image_name }},mode=max,image-manifest=true,oci-mediatypes=true \
-      --import-cache type=local,src=/tmp/buildcache/{{ ecr_image_name }},ignore-error=true \
-      --output type=docker,name={{ ecr_image_name }}:{{ ecr_image_tags.0 }} | docker load
+      {% for key, value in ecr_image_buildargs.items() %}
+      --build-arg {{ key }}={{ value }} \
+      {% endfor %}
+      --cache-to type=local,dest=/tmp/buildcache/{{ ecr_image_name }},mode=max,image-manifest=true,oci-mediatypes=true \
+      --cache-from type=local,src=/tmp/buildcache/{{ ecr_image_name }},ignore-error=true \
+      --tag {{ ecr_image_name }}:{{ ecr_image_tags.0 }} \
+      --output type=docker \
+      {{ ecr_image_src_dir }}
   async: 3600
   poll: 0
   register: buildx_image_sleeper
